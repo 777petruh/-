@@ -221,31 +221,47 @@ object Form1: TForm1
           AlignWithMargins = True
           Left = 4
           Top = 4
-          Width = 185
+          Width = 158
           Height = 25
           Align = alLeft
           Caption = #1055#1086#1083#1091#1095#1080#1090#1100' '#1074#1089#1077' '#1076#1072#1085#1085#1099#1077
           TabOrder = 0
           OnClick = Button9Click
+          ExplicitLeft = 195
         end
         object DBNavigator1: TDBNavigator
-          Left = 413
+          Left = 469
           Top = 1
           Width = 240
           Height = 31
           DataSource = DataSource1
           Align = alLeft
           TabOrder = 1
+          ExplicitLeft = 472
+          ExplicitTop = -4
         end
         object CheckBox1: TCheckBox
-          Left = 192
+          Left = 165
           Top = 1
-          Width = 221
+          Width = 140
           Height = 31
           Align = alLeft
           Caption = #1074#1082#1083'. '#1088#1077#1076#1072#1082#1090#1080#1088'. '#1089#1090#1088#1086#1082
           TabOrder = 2
           OnClick = CheckBox1Click
+        end
+        object Button10: TButton
+          AlignWithMargins = True
+          Left = 308
+          Top = 4
+          Width = 158
+          Height = 25
+          Align = alLeft
+          Caption = #1044#1086#1073#1072#1074#1080#1090#1100' Word '#1074' '#1073#1072#1079#1091
+          TabOrder = 3
+          Visible = False
+          OnClick = Button10Click
+          ExplicitLeft = 428
         end
       end
       object DBRichEdit1: TDBRichEdit
@@ -327,6 +343,7 @@ object Form1: TForm1
     Align = alRight
     Caption = 'Panel9'
     TabOrder = 2
+    Visible = False
     object Button6: TButton
       Left = 1
       Top = 26
@@ -419,7 +436,7 @@ object Form1: TForm1
     Connection = FDConnection1
     SQL.Strings = (
       'select * from main where Text_for_seach like :S1')
-    Left = 469
+    Left = 389
     Top = 400
     ParamData = <
       item
@@ -432,6 +449,7 @@ object Form1: TForm1
     Top = 312
     object N1: TMenuItem
       Caption = #1059#1076#1072#1083#1080#1090#1100' '#1089#1083#1086#1074#1086' '#1080#1079' '#1087#1088#1086#1074#1077#1088#1082#1080' '#1074' '#1073#1072#1079#1077
+      OnClick = N1Click
     end
   end
   object DataSource1: TDataSource
@@ -445,7 +463,50 @@ object Form1: TForm1
     Connection = FDConnection1
     SQL.Strings = (
       'select * from main ')
-    Left = 541
+    Left = 461
     Top = 400
+  end
+  object OpenDialog1: TOpenDialog
+    Filter = #1060#1072#1081#1083#1099' Word|*.doc*'
+    Left = 837
+    Top = 392
+  end
+  object FDQuery3: TFDQuery
+    BeforePost = FDQuery2BeforePost
+    FieldOptions.BlobDisplayValue = dvFullText
+    Connection = FDConnection1
+    SQL.Strings = (
+      'insert into main values (:s1,:s2,:s3) ')
+    Left = 533
+    Top = 400
+    ParamData = <
+      item
+        Name = 'S1'
+        ParamType = ptInput
+      end
+      item
+        Name = 'S2'
+        ParamType = ptInput
+      end
+      item
+        Name = 'S3'
+        ParamType = ptInput
+      end>
+  end
+  object FDQuery4: TFDQuery
+    BeforePost = FDQuery2BeforePost
+    FieldOptions.BlobDisplayValue = dvFullText
+    Connection = FDConnection1
+    SQL.Strings = (
+      
+        'UPDATE main SET Text_for_seach = REPLACE (Text_for_seach, :S1, '#39 +
+        #39');')
+    Left = 605
+    Top = 400
+    ParamData = <
+      item
+        Name = 'S1'
+        ParamType = ptInput
+      end>
   end
 end

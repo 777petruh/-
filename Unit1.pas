@@ -11,7 +11,7 @@ uses
   FireDAC.DApt.Intf, FireDAC.DApt, Data.DB, FireDAC.Comp.DataSet,
   FireDAC.Comp.Client, FireDAC.Phys.SQLite, FireDAC.Phys.SQLiteDef,
   FireDAC.Stan.ExprFuncs, FireDAC.Phys.SQLiteWrapper.Stat, Vcl.Menus, Vcl.Grids,
-  Vcl.DBGrids, Vcl.DBCtrls, Vcl.Buttons;
+  Vcl.DBGrids, Vcl.DBCtrls, Vcl.Buttons,ComObj;
 
 type
   TForm1 = class(TForm)
@@ -56,6 +56,10 @@ type
     Panel1: TPanel;
     ProgressBar1: TProgressBar;
     Button7: TButton;
+    Button10: TButton;
+    OpenDialog1: TOpenDialog;
+    FDQuery3: TFDQuery;
+    FDQuery4: TFDQuery;
     procedure FormResize(Sender: TObject);
     Function Find_in_DB(FindString:string; ADD_in_result:boolean ):boolean;
     procedure Button1Click(Sender: TObject);
@@ -76,6 +80,8 @@ type
     procedure FDQuery2BeforePost(DataSet: TDataSet);
     procedure CheckBox1Click(Sender: TObject);
     procedure CheckBox2Click(Sender: TObject);
+    procedure Button10Click(Sender: TObject);
+    procedure N1Click(Sender: TObject);
   private
     { Private declarations }
   public
@@ -160,7 +166,7 @@ Function delete_znac(s:string; ProgBar:TProgressBar):string;
 var Znaki:string;
 i:integer;
 begin
-Znaki:='!?:;".,<>—…0123456789-−«#»%()';
+Znaki:='!?:;".,<>—…0123456789-−«#»%()\/';
 ProgBar.Position:=0;
 ProgBar.Max:=length(Znaki);
 
@@ -190,7 +196,7 @@ s:=SpisokSort.Text;
 SpisokSort.Free;
 
 T:=Tstringlist.Create;
-T.LoadFromFile('Союзы.txt');
+T.LoadFromFile(ExtractFilePath(Application.ExeName)+'Союзы.txt');
 ProgBar.Position:=0;
 ProgBar.Max:=t.Count-1;
 for i := 0 to t.Count-1 do
@@ -198,7 +204,7 @@ for i := 0 to t.Count-1 do
   s:=StringReplace(s,#13#10+T[i]+#13#10,#13#10,[rfReplaceAll, rfIgnoreCase]);
   ProgBar.Position:=i;
   end;
-T.LoadFromFile('Предлоги.txt');
+T.LoadFromFile(ExtractFilePath(Application.ExeName)+'Предлоги.txt');
 ProgBar.Position:=0;
 ProgBar.Max:=t.Count-1;
 for i := 0 to t.Count-1 do
@@ -206,7 +212,7 @@ for i := 0 to t.Count-1 do
   s:=StringReplace(s,#13#10+T[i]+#13#10,#13#10,[rfReplaceAll, rfIgnoreCase]);
   ProgBar.Position:=i;
   end;
-T.LoadFromFile('Местоимения.txt');
+T.LoadFromFile(ExtractFilePath(Application.ExeName)+'Местоимения.txt');
 ProgBar.Position:=0;
 ProgBar.Max:=t.Count-1;
 for i := 0 to t.Count-1 do
@@ -279,12 +285,13 @@ begin
     FDQuery1.First;
     while not FDQuery1.eof do
     begin
-
+      s:='';
       Memos[j]:=TRichEdit.Create(ScrollBox1);
       Memos[j].Parent:=ScrollBox1;
       Memos[j].Align:=alTop;
       Memos[j].ScrollBars:=ssVertical;
-      Memos[j].Lines.Text:=FDQuery1.FieldByName('Text_All').AsString;
+      If FDQuery1.FieldByName('punkt').AsString.Length>0 then s:='▒▒▒ '+FDQuery1.FieldByName('punkt').AsString+' ▒▒▒'+#10;
+      Memos[j].Lines.Text:=s+FDQuery1.FieldByName('Text_All').AsString;
       Memos[j].OnSelectionChange:=RichEdit1SelectionChange;
       Memos[j].PopupMenu:=PopupMenu1;
       Memos[j].StyleElements:=[seClient,seBorder];
@@ -304,6 +311,73 @@ begin
 
 end;
 
+end;
+
+procedure TForm1.Button10Click(Sender: TObject);
+var  Word,CurTable:OleVariant;
+ s:string;
+begin
+If opendialog1.Execute then
+  begin
+      StatusBar1.Panels[2].Text:='Начало загрузки';
+      Word:=CreateOleObject('Word.Application'); // создаём приложение Word
+      Word.Visible:=false; // делаем приложение видимым
+      Word.DisplayAlerts := false;
+      try
+        //Открываем ворд
+            Word.Documents.Open(opendialog1.FileName);
+          ///Получить число таблиц таблицу
+         var tablecount:integer:= Word.ActiveDocument.Tables.Count;
+         If tablecount=0 then
+             begin
+             ///Получить весь текст
+             s:=Word.ActiveDocument.range.text;
+             //s:=s.Replace(#13,'');
+             //s:=s.Replace(#1,'');
+             FDQuery3.ParamByname('S1').DataType := ftString;
+             FDQuery3.ParamByname('S1').Clear;
+             FDQuery3.ParamByname('S2').AsString:=ansilowercase(s);
+             FDQuery3.ParamByname('S3').AsString:=ansilowercase(s);
+             FDQuery3.ExecSQL;
+             end
+             else
+             begin
+              for var i := 1 to tablecount do
+              begin
+              s:=Word.ActiveDocument.range.text;
+               CurTable:=Word.ActiveDocument.Tables.Item(i);
+               var iCols:integer := CurTable.Rows.Count;
+               //var iRows:integer := CurTable.Columns.Count;
+
+               for var j := 1 to iCols do
+               begin
+                  try
+                   FDQuery3.ParamByname('S1').AsString:=ansilowercase(CurTable.cell(j,1).range.text);
+                   FDQuery3.ParamByname('S2').AsString:=ansilowercase(CurTable.cell(j,2).range.text);
+                   FDQuery3.ParamByname('S3').AsString:=ansilowercase(CurTable.cell(j,2).range.text);
+                   FDQuery3.ExecSQL;
+                  except
+
+                  end;
+               end;
+
+
+              end;
+
+             end;
+
+
+
+
+      finally
+         Word.ActiveDocument.close;
+         Word.Application.Quit;
+         StatusBar1.Panels[2].Text:='Готово';
+         Showmessage('Готово');
+      end;
+      Word := Unassigned;
+
+  end;
 end;
 
 procedure TForm1.Button1Click(Sender: TObject);
@@ -503,7 +577,7 @@ end;
 
 procedure TForm1.Button9Click(Sender: TObject);
 begin
-
+FDQuery2.Close;
 FDQuery2.Open();
 DBRichEdit1.DataField:='Text_for_seach';
 DBRichEdit2.DataField:='Text_All';
@@ -512,6 +586,7 @@ end;
 procedure TForm1.CheckBox1Click(Sender: TObject);
 begin
 If CheckBox1.Checked then dbgrid1.Options := dbgrid1.Options + [dgEditing] else dbgrid1.Options := dbgrid1.Options - [dgEditing];
+If CheckBox1.Checked then button10.Visible:=CheckBox1.Checked else  button10.Visible:=CheckBox1.Checked;
 end;
 
 procedure TForm1.CheckBox2Click(Sender: TObject);
@@ -533,6 +608,12 @@ DBGrid1.Columns[1].Width:=Form1.Width div 2 - 70;
 DBGrid1.Columns[2].Width:=Form1.Width div 2-50;
 Panel7.Width:=Form1.Width div 2 ;
 Panel8.Width:=Form1.Width div 2;
+end;
+
+procedure TForm1.N1Click(Sender: TObject);
+begin
+FDQuery4.ParamByname('S1').AsString:=ansilowercase(RichEdit1.SelText);
+FDQuery4.ExecSQL;
 end;
 
 procedure TForm1.RichEdit1KeyDown(Sender: TObject; var Key: Word;
